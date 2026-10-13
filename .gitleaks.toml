@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Sparkle verification public key; private signing key is stored in Keychain and GitHub secrets"
+regexTarget = "line"
+regexes = ['''^\s*SUPublicEDKey: JkPStOGp80ZdYDByOfjHmkxGpnZGgjd9E67eqVOoQy0=$''']
