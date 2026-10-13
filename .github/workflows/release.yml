@@ -15,6 +15,8 @@ jobs:
     env:
       DEVELOPER_ID_P12_BASE64: ${{ secrets.DEVELOPER_ID_P12_BASE64 }}
       DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+      APPLE_DEV_P12_BASE64: ${{ secrets.APPLE_DEV_P12_BASE64 }}
+      APPLE_DEV_P12_PASSWORD: ${{ secrets.APPLE_DEV_P12_PASSWORD }}
       ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -26,7 +28,15 @@ jobs:
         shell: bash
         run: |
           missing=0
-          for name in DEVELOPER_ID_P12_BASE64 DEVELOPER_ID_P12_PASSWORD ASC_API_KEY_P8 ASC_KEY_ID ASC_ISSUER_ID SPARKLE_PRIVATE_KEY; do
+          required=(SPARKLE_PRIVATE_KEY)
+          if [[ -n "$DEVELOPER_ID_P12_BASE64" && -n "$DEVELOPER_ID_P12_PASSWORD" ]]; then
+            required+=(ASC_API_KEY_P8 ASC_KEY_ID ASC_ISSUER_ID)
+            echo "Using Developer ID signing and notarization."
+          else
+            required+=(APPLE_DEV_P12_BASE64 APPLE_DEV_P12_PASSWORD)
+            echo "Using Apple Development signing without notarization."
+          fi
+          for name in "${required[@]}"; do
             if [[ -z "${!name}" ]]; then
               echo "::error::Missing repository secret $name. See docs/releases.md for setup."
               missing=1

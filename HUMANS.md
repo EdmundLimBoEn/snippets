@@ -6,5 +6,5 @@
 - [ ] Turn on Settings → General → Launch at login, then confirm Snippets starts after logging out and back in.
 - [ ] In Settings, click a key's shortcut pill and press physical caps lock + a letter to confirm the new recorder captures the Karabiner Hyper chord.
 - [ ] After granting Accessibility, quit Snippets and run `./scripts/e2e.sh` (auto-pastes into TextEdit and checks the clipboard is restored).
-- [ ] Xcode → Settings → Accounts → your team → Manage Certificates → + → Developer ID Application, then tell Claude so it can export the P12, set the signing secrets and run the first release (manual route: [release setup](docs/releases.md)).
-- [ ] After the first release, verify public download access when the repository is made public and test Sparkle between two published versions.
+- [x] Created the Developer ID Application G2 certificate for team DUU8J39BA7, imported the matching identity, and configured both Developer ID P12 repository secrets.
+- [ ] After the first release, test Sparkle between two published versions and confirm Accessibility permission survives the update.
