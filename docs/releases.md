@@ -47,6 +47,6 @@ Keep the repository private until the public-history review is accepted and the 
 
 ## History review
 
-Before this change, Gitleaks scanned all 30 commits including local checkpoint refs with redaction enabled and found no secrets. A separate all-ref text scan found no actual embedded email addresses, private keys, credentials, or absolute home paths (its email matches were `@2x.png` asset filenames). Commit metadata and planning documents identify Edmund by name and contain development notes; these are expected personal attribution, not credential leaks. No history was rewritten.
+Before this change, Gitleaks scanned all 30 commits including local checkpoint refs with redaction enabled and found no secrets. A separate all-ref text scan found no actual embedded email addresses, private keys, credentials, or absolute home paths (its email matches were `@2x.png` asset filenames). Commit metadata and planning documents identify Edmund by name and contain development notes; these are expected personal attribution, not credential leaks. The post-implementation scan flagged only the deliberately public Sparkle verification key in `project.yml`; `.gitleaks.toml` allowlists that exact public-key line. No history was rewritten.
 
 Written by gpt-6.1-sol in Codex on behalf of Edmund
