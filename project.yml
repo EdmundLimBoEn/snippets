@@ -13,7 +13,7 @@ settings:
     DEVELOPMENT_TEAM: DUU8J39BA7
     CODE_SIGN_IDENTITY: Apple Development
     ENABLE_APP_SANDBOX: NO
-    ENABLE_HARDENED_RUNTIME: NO
+    ENABLE_HARDENED_RUNTIME: YES
 targets:
   Snippets:
     type: application
