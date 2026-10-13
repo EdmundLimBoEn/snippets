@@ -43,8 +43,10 @@ struct SettingsView: View {
         }
         .frame(width: 860, height: 560)
         .onAppear {
+            NSApp.setActivationPolicy(.regular)
             if selection == nil { selection = store.keys.first?.id }
         }
+        .onDisappear { NSApp.setActivationPolicy(.accessory) }
         .alert("Delete key?", isPresented: Binding(
             get: { deletingKey != nil },
             set: { if !$0 { deletingKey = nil } }
