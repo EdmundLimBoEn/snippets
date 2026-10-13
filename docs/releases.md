@@ -18,16 +18,18 @@ The workflow validates the secrets required for the selected signing mode:
 - `DEVELOPER_ID_P12_BASE64`: base64 of a Developer ID Application certificate **with its private key**, team `DUU8J39BA7`.
 - `DEVELOPER_ID_P12_PASSWORD`: password protecting that P12.
 
+The Developer ID Application G2 certificate for team `DUU8J39BA7` was created on 2026-10-13 and expires on 2031-09-17. Both Developer ID secrets are configured. When exporting with OpenSSL 3, use `-keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg sha1` for macOS Keychain compatibility; the default export failed with “MAC verification failed” despite the correct password. Verify the P12 imports into a temporary keychain before updating secrets, then remove the temporary keychain and P12.
+
 Sparkle's key is also in the login keychain under account `snippets`. Do not regenerate it for routine releases; its public half is embedded in the app. To export a backup, use the Sparkle distribution's `bin/generate_keys --account snippets -x /secure/path/sparkle-key` and keep the exported file private.
 
-The supplied `AuthKey_6G45YGP6ZU.p8` was rejected with the locally recorded issuer (`401 NOT_AUTHORIZED`). CI instead uses the existing locally configured, API-validated credential `U968QPQQ67`. Certificate creation with that credential was refused: “This operation can only be performed by the Account Holder.” Notarization remains to be validated by the first fully configured release.
+The supplied `AuthKey_6G45YGP6ZU.p8` was rejected with the locally recorded issuer (`401 NOT_AUTHORIZED`). CI instead uses the existing locally configured, API-validated credential `U968QPQQ67`. Certificate creation with that credential was refused: “This operation can only be performed by the Account Holder.” Apple accepted the first app submission for processing; its notarization result is pending. The signed demo is published as [v1.0.0](https://github.com/EdmundLimBoEn/snippets/releases/tag/v1.0.0).
 
-## Account Holder action
+## Certificate renewal and recovery
 
 1. The Account Holder can authorise Edmund’s Admin role to create Developer ID certificates in App Store Connect → Users and Access, or create the certificate directly. Sign in at https://developer.apple.com/account/resources/certificates/list as Account Holder. Create a **Developer ID Application** certificate for team `DUU8J39BA7` (not Apple Development, Mac App Distribution, or Developer ID Installer).
 2. A matching RSA private key and CSR were generated at `~/.private_keys/snippets/developer-id.key` and `developer-id.csr`. Upload that CSR and download the certificate. Alternatively create a CSR in Keychain Access, then use its matching private key.
 3. If using the supplied CSR, import its private key and the downloaded certificate into the login keychain. Confirm a Developer ID Application identity appears in `security find-identity -v -p codesigning`. In Keychain Access → My Certificates, export the certificate **and private key** as a `.p12` protected with a strong password.
-4. Set the two missing secrets (adjust the file path):
+4. Set the two signing secrets (adjust the file path):
 
 ```sh
 base64 < ~/Downloads/Snippets-Developer-ID.p12 | gh secret set DEVELOPER_ID_P12_BASE64 --repo EdmundLimBoEn/snippets

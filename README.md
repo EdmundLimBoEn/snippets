@@ -26,7 +26,7 @@ Requires macOS 26 or later (Apple silicon or Intel).
 2. Open the DMG and drag Snippets into Applications, then launch it there.
 3. Grant Snippets permission in System Settings → Privacy & Security → Accessibility when prompted.
 
-Until Developer ID signing is available, the app is not notarized. If macOS blocks the first launch, use System Settings → Privacy & Security → **Open Anyway**, or run `xattr -dr com.apple.quarantine /Applications/Snippets.app`.
+The demo release is signed with Developer ID; Apple notarization is still pending. If macOS blocks the first launch, use System Settings → Privacy & Security → **Open Anyway**, or run `xattr -dr com.apple.quarantine /Applications/Snippets.app`.
 
 Snippets checks for updates automatically using Sparkle. You can also choose **Check for Updates…** from the menu bar menu.
 
