@@ -8,8 +8,10 @@ work=$(mktemp -d)
 keychain="$work/release.keychain-db"
 keychain_password=$(openssl rand -hex 32)
 cleanup() {
+  status=$?
   security delete-keychain "$keychain" >/dev/null 2>&1 || true
   rm -rf "$work"
+  exit "$status"
 }
 trap cleanup EXIT
 notarized=false
@@ -72,11 +74,11 @@ while IFS= read -r -d '' helper; do
 done < <(find "$framework/Versions/B" \( -name '*.xpc' -o -name Autoupdate \) -print0)
 codesign --force --sign "$identity" --options runtime --timestamp --preserve-metadata=entitlements "$framework/Versions/B/Updater.app"
 codesign --force --sign "$identity" --options runtime --timestamp "$framework"
-requirements=()
+signing_options=(--force --sign "$identity" --options runtime --timestamp)
 if [[ "$notarized" == false ]]; then
-  requirements=(-r '=designated => identifier "com.edmundlim.snippets" and anchor apple generic and certificate leaf[subject.OU] = "DUU8J39BA7"')
+  signing_options+=(-r '=designated => identifier "com.edmundlim.snippets" and anchor apple generic and certificate leaf[subject.OU] = "DUU8J39BA7"')
 fi
-codesign --force --sign "$identity" --options runtime --timestamp "${requirements[@]}" "$app"
+codesign "${signing_options[@]}" "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
 codesign -dv "$app" 2>&1 | grep -qx 'TeamIdentifier=DUU8J39BA7'
 codesign -dr - "$app" 2>&1 | grep -q 'subject.OU.*DUU8J39BA7'
