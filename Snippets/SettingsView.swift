@@ -158,9 +158,7 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    KeyboardShortcuts.Recorder(for: KeyboardShortcuts.Name(key.id.uuidString)) { shortcut in
-                        binding.shortcut.wrappedValue = shortcut
-                    }
+                    ShortcutRecorder(shortcut: binding.shortcut)
                     .id(key.id)
                 }
                 .padding(16)
@@ -235,6 +233,87 @@ struct SettingsView: View {
     private func edit(_ snippet: Snippet, in key: Key) {
         editingKeyID = key.id
         editingSnippet = snippet
+    }
+}
+
+private struct ShortcutRecorder: View {
+    @Binding var shortcut: KeyboardShortcuts.Shortcut?
+    @State private var monitor: Any?
+    @State private var hotkeysWereEnabled = true
+    @State private var capturedKeyCode: UInt16?
+    @State private var capturedShortcut: KeyboardShortcuts.Shortcut?
+
+    private var isRecording: Bool { monitor != nil }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button(action: startRecording) {
+                Text(isRecording ? "Press keys…" : shortcut?.description ?? "Record shortcut")
+                    .font(.system(size: 13, weight: .medium))
+                    .frame(minWidth: 120)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.primary.opacity(isRecording ? 0.12 : 0.06), in: Capsule())
+                    .overlay(Capsule().stroke(isRecording ? Color.accentColor : Color.primary.opacity(0.15)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isRecording ? "Press keys…" : "Record shortcut")
+            .accessibilityValue(shortcut?.description ?? "Not set")
+            if shortcut != nil {
+                Button {
+                    stopRecording()
+                    shortcut = nil
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear shortcut")
+            }
+        }
+        .onDisappear(perform: stopRecording)
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { _ in
+            stopRecording()
+        }
+    }
+
+    private func startRecording() {
+        guard !isRecording else { return }
+        NSApp.activate()
+        NSApp.keyWindow?.makeFirstResponder(nil)
+        hotkeysWereEnabled = KeyboardShortcuts.isEnabled
+        KeyboardShortcuts.isEnabled = false
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp]) { event in
+            if let capturedKeyCode {
+                if event.type == .keyUp, event.keyCode == capturedKeyCode {
+                    let recorded = capturedShortcut
+                    stopRecording()
+                    shortcut = recorded
+                }
+                return nil
+            }
+            guard event.type == .keyDown else { return nil }
+            if event.keyCode == 53 {
+                stopRecording()
+                return nil
+            }
+            guard !event.isARepeat,
+                  !event.modifierFlags.intersection([.command, .control, .option]).isEmpty,
+                  let recorded = KeyboardShortcuts.Shortcut(event: event) else { return nil }
+            // Keep hotkeys suspended through key-up so recording cannot trigger a paste.
+            capturedKeyCode = event.keyCode
+            capturedShortcut = recorded
+            return nil
+        }
+    }
+
+    private func stopRecording() {
+        guard let monitor else { return }
+        NSEvent.removeMonitor(monitor)
+        self.monitor = nil
+        capturedKeyCode = nil
+        capturedShortcut = nil
+        KeyboardShortcuts.isEnabled = hotkeysWereEnabled
     }
 }
 
