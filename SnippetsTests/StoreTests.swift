@@ -78,7 +78,7 @@ final class StoreTests: XCTestCase {
         let second = NSPasteboardItem()
         second.setString("second", forType: .string)
         board.writeObjects([first, second])
-        let snapshot = Paster.snapshot(board)
+        let snapshot = try XCTUnwrap(Paster.snapshot(board))
         XCTAssertEqual(snapshot.count, 2)
         Paster.write(Snippet(name: "Replacement", text: "new"), to: board)
         XCTAssertEqual(board.string(forType: .string), "new")
@@ -87,6 +87,6 @@ final class StoreTests: XCTestCase {
         Paster.restore(snapshot, to: board)
         XCTAssertEqual(Paster.snapshot(board), snapshot)
         Paster.restore([], to: board)
-        XCTAssertTrue(Paster.snapshot(board).isEmpty)
+        XCTAssertEqual(Paster.snapshot(board), [])
     }
 }

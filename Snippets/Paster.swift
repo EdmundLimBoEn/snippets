@@ -3,15 +3,22 @@ import ApplicationServices
 
 @MainActor enum Paster {
     typealias Snapshot = [[NSPasteboard.PasteboardType: Data]]
-    private static var pending: [Snippet] = []
+    private static var pending: [(snippet: Snippet, pid: pid_t)] = []
     private static var isPasting = false
+    private static var activeRestore: (snapshot: Snapshot, changeCount: Int)?
 
-    static func snapshot(_ pasteboard: NSPasteboard) -> Snapshot {
-        (pasteboard.pasteboardItems ?? []).map { item in
-            Dictionary(uniqueKeysWithValues: item.types.compactMap { type in
-                item.data(forType: type).map { (type, $0) }
-            })
+    static func snapshot(_ pasteboard: NSPasteboard) -> Snapshot? {
+        let changeCount = pasteboard.changeCount
+        var snapshot: Snapshot = []
+        for item in pasteboard.pasteboardItems ?? [] {
+            var representations: [NSPasteboard.PasteboardType: Data] = [:]
+            for type in item.types {
+                guard let data = item.data(forType: type) else { return nil }
+                representations[type] = data
+            }
+            snapshot.append(representations)
         }
+        return pasteboard.changeCount == changeCount ? snapshot : nil
     }
 
     static func restore(_ snapshot: Snapshot, to pasteboard: NSPasteboard) {
@@ -54,7 +61,8 @@ import ApplicationServices
             copy(snippet)
             return
         }
-        pending.append(snippet)
+        guard let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier else { return }
+        pending.append((snippet, pid))
         guard !isPasting else { return }
         isPasting = true
         Task { @MainActor in
@@ -67,21 +75,29 @@ import ApplicationServices
                 let source = CGEventSource(stateID: .combinedSessionState)
                 guard let down = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true),
                       let up = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false) else { continue }
-                let previous = snapshot(.general)
-                copy(next)
+                guard NSWorkspace.shared.frontmostApplication?.processIdentifier == next.pid else { continue }
+                // Pasting would destroy clipboard data we couldn't read back, so refuse instead.
+                guard let previous = snapshot(.general) else { NSSound.beep(); continue }
+                copy(next.snippet)
                 let writtenChangeCount = NSPasteboard.general.changeCount
+                activeRestore = (previous, writtenChangeCount)
                 down.flags = .maskCommand
                 up.flags = .maskCommand
                 down.post(tap: .cgSessionEventTap)
                 up.post(tap: .cgSessionEventTap)
                 // ponytail: fixed 500ms restore delay; target apps read the pasteboard async — raise if a slow app pastes the old clipboard.
                 try? await Task.sleep(for: .milliseconds(500))
-                // Preserve a newer copy made by the user or another app during the delay.
-                if NSPasteboard.general.changeCount == writtenChangeCount {
-                    restore(previous, to: .general)
-                }
+                restoreIfUnchanged()
             }
             isPasting = false
         }
+    }
+
+    static func restoreIfUnchanged() {
+        // Preserve a newer copy made by the user or another app during the delay.
+        if let activeRestore, NSPasteboard.general.changeCount == activeRestore.changeCount {
+            restore(activeRestore.snapshot, to: .general)
+        }
+        activeRestore = nil
     }
 }

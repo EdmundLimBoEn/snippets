@@ -24,7 +24,10 @@ struct SnippetsApp: App {
             if let error = store.persistenceError { Text("Could not save or load snippets: \(error)") }
             Divider()
             OpenSettingsButton()
-            Button("Quit") { NSApplication.shared.terminate(nil) }
+            Button("Quit") {
+                Paster.restoreIfUnchanged()
+                NSApplication.shared.terminate(nil)
+            }
                 .keyboardShortcut("q")
         }
         .menuBarExtraStyle(.menu)
