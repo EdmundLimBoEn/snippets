@@ -64,17 +64,18 @@ import ApplicationServices
                     if NSEvent.modifierFlags.intersection([.command, .control, .option, .shift]).isEmpty { break }
                     try? await Task.sleep(for: .milliseconds(20))
                 }
-                guard let down = CGEvent(keyboardEventSource: nil, virtualKey: 9, keyDown: true),
-                      let up = CGEvent(keyboardEventSource: nil, virtualKey: 9, keyDown: false) else { continue }
+                let source = CGEventSource(stateID: .combinedSessionState)
+                guard let down = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true),
+                      let up = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false) else { continue }
                 let previous = snapshot(.general)
                 copy(next)
                 let writtenChangeCount = NSPasteboard.general.changeCount
                 down.flags = .maskCommand
                 up.flags = .maskCommand
-                down.post(tap: .cghidEventTap)
-                up.post(tap: .cghidEventTap)
-                // ponytail: fixed 300ms restore delay; target apps read the pasteboard async — raise if a slow app pastes the old clipboard.
-                try? await Task.sleep(for: .milliseconds(300))
+                down.post(tap: .cgSessionEventTap)
+                up.post(tap: .cgSessionEventTap)
+                // ponytail: fixed 500ms restore delay; target apps read the pasteboard async — raise if a slow app pastes the old clipboard.
+                try? await Task.sleep(for: .milliseconds(500))
                 // Preserve a newer copy made by the user or another app during the delay.
                 if NSPasteboard.general.changeCount == writtenChangeCount {
                     restore(previous, to: .general)

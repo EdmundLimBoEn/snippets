@@ -30,6 +30,7 @@ import SwiftUI
         backgroundColor = .clear
         hasShadow = true
         hidesOnDeactivate = false
+        becomesKeyOnlyIfNeeded = false
         collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         delegate = self
         contentView = NSHostingView(rootView: PickerView(selection: selection) { [weak self] index in
