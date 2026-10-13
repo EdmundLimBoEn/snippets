@@ -1,0 +1,50 @@
+name: Snippets
+options:
+  deploymentTarget:
+    macOS: '26.0'
+packages:
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: 2.0.0
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: DUU8J39BA7
+    CODE_SIGN_IDENTITY: Apple Development
+    ENABLE_APP_SANDBOX: NO
+    ENABLE_HARDENED_RUNTIME: NO
+targets:
+  Snippets:
+    type: application
+    platform: macOS
+    sources: [Snippets]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.edmundlim.snippets
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: Snippets/Info.plist
+      properties:
+        LSUIElement: true
+        CFBundleDisplayName: Snippets
+    dependencies:
+      - package: KeyboardShortcuts
+  SnippetsTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [SnippetsTests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.edmundlim.snippets.tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Snippets
+schemes:
+  Snippets:
+    build:
+      targets:
+        Snippets: all
+        SnippetsTests: [test]
+    test:
+      targets: [SnippetsTests]
