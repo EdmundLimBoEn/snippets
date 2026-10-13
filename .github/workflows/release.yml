@@ -1,0 +1,55 @@
+name: Release
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: snippets-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      DEVELOPER_ID_P12_BASE64: ${{ secrets.DEVELOPER_ID_P12_BASE64 }}
+      DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+      ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check release secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in DEVELOPER_ID_P12_BASE64 DEVELOPER_ID_P12_PASSWORD ASC_API_KEY_P8 ASC_KEY_ID ASC_ISSUER_ID SPARKLE_PRIVATE_KEY; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing repository secret $name. See docs/releases.md for setup."
+              missing=1
+            fi
+          done
+          exit "$missing"
+      - name: Select Xcode 26 or newer
+        shell: bash
+        run: |
+          xcode=$(find /Applications -maxdepth 1 -name 'Xcode_*.app' ! -iname '*beta*' | sort -V | tail -1)
+          test -n "$xcode"
+          sudo xcode-select --switch "$xcode/Contents/Developer"
+          xcodebuild -version
+          xcrun --sdk macosx --show-sdk-version | awk -F. '{ if ($1 < 26) exit 1 }'
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Test
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodegen generate
+          xcodebuild -scheme Snippets -destination 'platform=macOS' \
+            -derivedDataPath build/ci CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= \
+            ENABLE_HARDENED_RUNTIME=NO test
+      - name: Build, sign, notarize and publish
+        run: bash scripts/release.sh
