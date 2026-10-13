@@ -21,7 +21,7 @@ import SwiftUI
 
     private init(key: Key) {
         selection = PickerSelection(key: key)
-        super.init(contentRect: NSRect(x: 0, y: 0, width: 420, height: min(440, 56 + key.snippets.count * 48)),
+        super.init(contentRect: NSRect(x: 0, y: 0, width: 500, height: min(440, 56 + key.snippets.count * 48)),
                    styleMask: [.nonactivatingPanel, .borderless, .fullSizeContentView],
                    backing: .buffered, defer: false)
         level = .floating
@@ -97,7 +97,7 @@ private struct PickerView: View {
                                     Text(snippet.name).lineLimit(1)
                                     Spacer(minLength: 4)
                                     Text(snippet.plainText.replacingOccurrences(of: "\n", with: " "))
-                                        .foregroundStyle(.tertiary).lineLimit(1).frame(maxWidth: 170, alignment: .trailing)
+                                        .foregroundStyle(.tertiary).lineLimit(1).frame(maxWidth: 260, alignment: .trailing)
                                 }
                                 .padding(10)
                                 .contentShape(Rectangle())
