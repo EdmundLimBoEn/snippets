@@ -26,12 +26,12 @@ Requires macOS 26 or later (Apple silicon or Intel).
 2. Open the DMG and drag Snippets into Applications, then launch it there.
 3. Grant Snippets permission in System Settings → Privacy & Security → Accessibility when prompted.
 
-The demo release is signed with Developer ID; Apple notarization is still pending. If macOS blocks the first launch, use System Settings → Privacy & Security → **Open Anyway**, or run `xattr -dr com.apple.quarantine /Applications/Snippets.app`.
+The app and DMG are signed with Developer ID, notarized by Apple, and stapled for offline verification.
 
 Snippets checks for updates automatically using Sparkle. You can also choose **Check for Updates…** from the menu bar menu.
 
 ## Releases
 
-Every push to `main` runs the Release workflow, tests the app, and publishes a universal signed DMG plus a signed Sparkle update. Releases use Apple Development signing without notarization until Developer ID secrets are configured, then switch automatically to Developer ID signing and notarization. Versions are `1.0.<GitHub run number>` with increasing build numbers. The download and update feed always use the latest GitHub Release. Signing setup and recovery instructions are in [docs/releases.md](docs/releases.md).
+Every push to `main` runs the Release workflow, tests the app, and publishes a universal signed DMG plus a signed Sparkle update. Developer ID signing and notarization are configured. Versions are `1.0.<GitHub run number>` with increasing build numbers. The download and update feed always use the latest GitHub Release. Signing setup and recovery instructions are in [docs/releases.md](docs/releases.md).
 
 Written by gpt-6-astra in Codex on behalf of Edmund

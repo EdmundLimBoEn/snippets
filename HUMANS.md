@@ -8,4 +8,4 @@
 - [ ] After granting Accessibility, quit Snippets and run `./scripts/e2e.sh` (auto-pastes into TextEdit and checks the clipboard is restored).
 - [x] Created the Developer ID Application G2 certificate for team DUU8J39BA7, imported the matching identity, and configured both Developer ID P12 repository secrets.
 - [ ] After the first release, test Sparkle between two published versions and confirm Accessibility permission survives the update.
-- [ ] Follow up on notarization run [38369215223](https://github.com/EdmundLimBoEn/snippets/actions/runs/38369215223) and verify Gatekeeper plus stapling after publication. The current v1.0.0 demo is signed but not notarized.
+- [x] Published and verified notarized [v1.0.7](https://github.com/EdmundLimBoEn/snippets/releases/tag/v1.0.7): Gatekeeper and stapler pass for both app and DMG; the signed Sparkle feed and public website download work.
