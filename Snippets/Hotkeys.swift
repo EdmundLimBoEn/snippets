@@ -1,3 +1,4 @@
+import ApplicationServices
 import KeyboardShortcuts
 
 @MainActor final class Hotkeys {
@@ -23,10 +24,23 @@ import KeyboardShortcuts
             guard key.shortcut != nil else { continue }
             registered.insert(name)
             KeyboardShortcuts.onKeyUp(for: name) { [weak self] in
-                guard let key = self?.store.keys.first(where: { $0.id == key.id }) else { return }
-                if key.snippets.count == 1, let snippet = key.snippets.first {
+                guard let key = self?.store.keys.first(where: { $0.id == key.id }),
+                      let snippet = key.snippets.first else { return }
+                guard AXIsProcessTrusted() else {
+                    let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+                    _ = AXIsProcessTrustedWithOptions(options)
+                    if key.snippets.count == 1 { Paster.copy(snippet) }
+                    return
+                }
+                guard Paster.hasFocusedTextInput() else {
+                    PickerPanel.dismiss()
+                    NoInputPanel.show()
+                    return
+                }
+                NoInputPanel.dismiss()
+                if key.snippets.count == 1 {
                     Paster.paste(snippet)
-                } else if key.snippets.count > 1 {
+                } else {
                     PickerPanel.show(key)
                 }
             }
