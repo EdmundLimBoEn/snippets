@@ -54,14 +54,33 @@ import ApplicationServices
         pasteboard.writeObjects([item])
     }
 
-    static func paste(_ snippet: Snippet) {
-        guard AXIsProcessTrusted() else {
-            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-            _ = AXIsProcessTrustedWithOptions(options)
-            copy(snippet)
-            return
+    static func hasFocusedTextInput() -> Bool {
+        guard let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier else { return false }
+        if pid == ProcessInfo.processInfo.processIdentifier {
+            return (NSApp.keyWindow?.firstResponder as? NSTextView)?.isEditable == true
         }
-        guard let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier else { return }
+        let app = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(app, 0.2)
+        var focused: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(app, kAXFocusedUIElementAttribute as CFString, &focused) == .success,
+              let focused, CFGetTypeID(focused) == AXUIElementGetTypeID() else { return false }
+        let element = focused as! AXUIElement
+        // A read-only web field can still report writable selection attributes.
+        var writable: DarwinBoolean = false
+        guard AXUIElementIsAttributeSettable(element, kAXValueAttribute as CFString, &writable) == .success,
+              writable.boolValue else { return false }
+
+        var role: CFTypeRef?
+        AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role)
+        if [kAXTextFieldRole, kAXTextAreaRole, kAXComboBoxRole].contains(role as? String ?? "") { return true }
+        var range: CFTypeRef?
+        return AXUIElementCopyAttributeValue(element, kAXSelectedTextRangeAttribute as CFString, &range) == .success
+            && range != nil
+    }
+
+    static func paste(_ snippet: Snippet) {
+        guard AXIsProcessTrusted(),
+              let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier else { return }
         pending.append((snippet, pid))
         guard !isPasting else { return }
         isPasting = true

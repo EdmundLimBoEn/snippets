@@ -1,6 +1,58 @@
 import AppKit
 import SwiftUI
 
+@MainActor final class NoInputPanel: NSPanel {
+    private static var current: NoInputPanel?
+    private static var dismissal: Task<Void, Never>?
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+
+    static func show() {
+        dismiss()
+        let panel = NoInputPanel()
+        current = panel
+        panel.orderFrontRegardless()
+        dismissal = Task {
+            do { try await Task.sleep(for: .milliseconds(500)) }
+            catch { return }
+            dismiss()
+        }
+    }
+
+    static func dismiss() {
+        dismissal?.cancel()
+        dismissal = nil
+        current?.orderOut(nil)
+        current = nil
+    }
+
+    private init() {
+        let view = NSHostingView(rootView:
+            Text("No Input field selected")
+                .font(.callout.weight(.medium))
+                .padding(.horizontal, 18)
+                .padding(.vertical, 12)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        )
+        let size = view.fittingSize
+        super.init(contentRect: NSRect(origin: .zero, size: size),
+                   styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        contentView = view
+        isReleasedWhenClosed = false
+        isOpaque = false
+        backgroundColor = .clear
+        hasShadow = true
+        ignoresMouseEvents = true
+        hidesOnDeactivate = false
+        level = .floating
+        collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
+        let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
+        if let frame = screen?.frame {
+            setFrameOrigin(NSPoint(x: frame.midX - size.width / 2, y: frame.midY - size.height / 2))
+        }
+    }
+}
+
 @MainActor final class PickerPanel: NSPanel, NSWindowDelegate {
     private static var current: PickerPanel?
     private let selection: PickerSelection
