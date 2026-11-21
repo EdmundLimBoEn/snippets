@@ -54,17 +54,35 @@ import ApplicationServices
         pasteboard.writeObjects([item])
     }
 
-    static func hasFocusedTextInput() -> Bool {
-        guard let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier else { return false }
+    static func hasFocusedTextInput(in pid: pid_t) async -> Bool {
         if pid == ProcessInfo.processInfo.processIdentifier {
             return (NSApp.keyWindow?.firstResponder as? NSTextView)?.isEditable == true
         }
         let app = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(app, 0.2)
+        if let element = focusedElement(in: app) { return isTextInput(element) }
+
+        // Electron can populate its accessibility tree asynchronously when first requested.
+        guard AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue) == .success else {
+            return false
+        }
+        for _ in 0..<8 {
+            do { try await Task.sleep(for: .milliseconds(75)) }
+            catch { return false }
+            guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { return false }
+            if let element = focusedElement(in: app) { return isTextInput(element) }
+        }
+        return false
+    }
+
+    private static func focusedElement(in app: AXUIElement) -> AXUIElement? {
         var focused: CFTypeRef?
         guard AXUIElementCopyAttributeValue(app, kAXFocusedUIElementAttribute as CFString, &focused) == .success,
-              let focused, CFGetTypeID(focused) == AXUIElementGetTypeID() else { return false }
-        let element = focused as! AXUIElement
+              let focused, CFGetTypeID(focused) == AXUIElementGetTypeID() else { return nil }
+        return (focused as! AXUIElement)
+    }
+
+    private static func isTextInput(_ element: AXUIElement) -> Bool {
         // A read-only web field can still report writable selection attributes.
         var writable: DarwinBoolean = false
         guard AXUIElementIsAttributeSettable(element, kAXValueAttribute as CFString, &writable) == .success,
